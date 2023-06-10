@@ -1,0 +1,41 @@
+GET http://localhost:8080/api/usuarios
+
+
+### POST USER
+POST http://localhost:8080/api/usuarios
+Content-Type: application/json
+
+{
+    "first_name": "Tomas",
+    "last_name": "Borto",
+    "email": "borto@gmail.com"
+}
+### UPDATE USER
+PUT http://localhost:8080/api/usuarios/64319286cd73dde0785024be
+Content-Type: application/json
+
+{
+    "first_name": "Eloisa",
+    "last_name": "saravia",
+    "email": "saravia@gmail.com"
+}
+### DELETE USER
+DELETE http://localhost:8080/api/usuarios/64319286cd73dde0785024be
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/productos 
+Content-Type: application/json
+
+{
+    "title": "producto",
+    "thumbnail":"url",
+    "price": 1500,
+    "code": "0001"
+}
+
+###
+GET http://localhost:8080/api/productos
+
+####
+GET http://localhost:8080/api/carritos/6452fbefc7ddcec328f8f962
