@@ -2,6 +2,8 @@ const {Router} =require('express')
 const jwt = require('jsonwebtoken')
 const {userModel} = require('../models/users.model.js')
 const { generateToken, isValidateToken } = require('../utils/jwtoken.js')
+const { faker } = require('@faker-js/faker')
+const { createHash, isValidPassword } = require('../utils/bcryptPass.js')
 
 
 const router = Router()
@@ -15,29 +17,26 @@ router.get('/', (req,res)=>{
     res.render('login', {})
 })
 
-//
-router.post('/login',(req, res)=> {
-    const {email, password} = req.body
-
-    if(email !== 'borto@gmail.com' || password !== 'borto123'){
-        return res.status(401).send({
-            status: 'error',
-            message: 'Invalid credentials'
-        })
-    }
-    let token = jwt.sign({email, password, role:'user_premium'}, 'CoderS3cR3t@', {expiresIn: '24h'})
+router.post('/login',async (req, res)=> {
+    try {
+        const { email, password} = req.body    
+        // console.log(email, password)
     
-    res.cookie('coderCookieToken', token, {
-        maxAge: 60*60*1000,
-        httpOnly: true
-    }).status(200).send({
-        status: 'success',
-        message: 'Loggen in successfully',
-        token
-    })
+        const user = await userModel.findOne({email})
 
+        console.log(user)
+        if (!user) return res.status(401).send({status: 'error', error: 'Usuario o contraseña incorrectos'})
+        
+        const isValidPass = isValidPassword(user, password)
 
-   
+        if (!isValidPass) return res.status(401).send({status: 'error', error: 'Usuario o contraseña incorrectos'})
+
+        console.log('logged in!')
+
+        res.send({status:'success', message: 'Usuario logueado correctamente'})
+    } catch (error) {
+        req.logger.error(error)
+    }
 })
 
 // GET Registro
@@ -49,45 +48,48 @@ router.get('/register', (req, res)=>{
 // POST Registro 
 router.post('/register', async (req,res)=> {
     try {
-        const {username, first_name, last_name, email, password} = req.body
-    
-        // const exists = await userModel.findOne({email})
-        const exists = users.find(user => user.email === email)
-    
-        if(exists) return res.send({status: 'error', message: 'Ya existe el usuario.'})
-    
-        // const newUser = {
-        //     username,
-        //     first_name,
-        //     last_name,
-        //     email,
-        //     password
-        // }
-        users.push({username, first_name, last_name, email, password})
-        
-        console.log(users)
-        // const resp = await userModel.create(newUser)
+        const { first_name, last_name, email, password } = req.body
 
-        const token = generateToken({
-            username,
-            email,
-            role: 'user'
-        })
+    const exists = await userModel.findOne({email})
 
-        console.log(token)
-        
-        res.status(200).send({
-            status: 'success',
-            message: 'Usuario creado con éxito',
-            token 
-        })
+    if (exists) return res.status(401).send({status: 'error', message: 'El usuario ya existe'})
+    const hashedPassword = createHash(password)
+
+
+    const user = {
+        first_name,
+        last_name,
+        email,
+        password: hashedPassword
+    }
+    let result = await userModel.create(user)
     
-        // res.status(200).render('login')
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Usuario creado correctamente',
+        payload: result
+    })
+    
         
     } catch (error) {
         console.log(error)
     }
 
+})
+
+router.get('/test/user', (req, res) => {
+    let first_name = faker.name.firstName()
+    let last_name  = faker.name.lastName()
+    let email      = faker.internet.email()
+    let password   = faker.internet.password()
+
+    res.send({
+        first_name,
+        last_name, 
+        email, 
+        password
+    })
 })
 
 router.get('/', (req, res)=>{
